@@ -38,6 +38,7 @@ classdef Service < handle
 
     methods (Access = private)
         function parameter = parseIntensityParameter(~, typeName, paramStr)
+        %PARSEINTENSITYPARAMETER Mengubah string parameter menjadi nilai numerik sesuai tipe transformasi.
             if strcmp(typeName, 'gamma')
                 parameter = str2double(paramStr);
                 if isnan(parameter) || parameter <= 0
@@ -54,6 +55,7 @@ classdef Service < handle
         end
 
         function kernel = parseKernel(~, typeName, paramStr)
+        %PARSEKERNEL Mengubah string parameter menjadi kernel matriks 3x3 sesuai tipe filter.
             if strcmp(typeName, 'Mean 3x3')
                 kernel = ones(3, 3) / 9;
             elseif strcmp(typeName, 'Gaussian 3x3')

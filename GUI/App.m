@@ -1,8 +1,5 @@
 classdef App < handle
     % APP Main Application Controller
-    %
-    % Jalankan aplikasi dengan menuliskan di Command Window:
-    %   app = App();
 
     properties (Access = private)
         UI         Layout
@@ -49,6 +46,7 @@ classdef App < handle
         end
 
         function selectInput(obj)
+        %SELECTINPUT Memilih citra input dari file.
             [fileName, folderName] = uigetfile( ...
                 {'*.jpg;*.jpeg;*.png;*.bmp;*.tif', 'Image files'}, 'Pilih citra input');
             if isequal(fileName, 0), return; end
@@ -65,6 +63,7 @@ classdef App < handle
         end
 
         function selectReference(obj)
+        %SELECTREFERENCE Memilih citra referensi dari file.
             [fileName, folderName] = uigetfile( ...
                 {'*.jpg;*.jpeg;*.png;*.bmp;*.tif', 'Image files'}, 'Pilih citra referensi');
             if isequal(fileName, 0), return; end
@@ -76,6 +75,7 @@ classdef App < handle
         end
 
         function updateParameterPanel(obj)
+        %UPDATEPARAMETERPANEL Memperbarui panel parameter sesuai metode & tipe.
             methodIndex = find(strcmp(obj.UI.MenuMethod.Value, obj.UI.MenuMethod.Items));
             if methodIndex == 1
                 typeItems = {'Negative', 'Log', 'Gamma', 'Contrast'};
@@ -127,6 +127,7 @@ classdef App < handle
         end
 
         function processImage(obj)
+        %PROCESSIMAGE Memproses citra input sesuai metode & parameter.
             if isempty(obj.ImgInput)
                 uialert(obj.UI.MainFig, 'Pilih citra input terlebih dahulu.', 'Input belum tersedia');
                 return;
@@ -153,6 +154,7 @@ classdef App < handle
         end
 
         function resetGui(obj)
+        %RESETGUI Mengatur ulang GUI dan data internal.
             obj.ImgInput = [];
             obj.ImgReference = [];
             obj.ImgOutput = [];

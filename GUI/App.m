@@ -43,6 +43,7 @@ classdef App < handle
             obj.UI.BtnSelectInput.ButtonPushedFcn = @(~,~) obj.selectInput();
             obj.UI.BtnSelectRef.ButtonPushedFcn   = @(~,~) obj.selectReference();
             obj.UI.MenuMethod.ValueChangedFcn     = @(~,~) obj.updateParameterPanel();
+            obj.UI.MenuType.ValueChangedFcn       = @(~,~) obj.updateParameterPanel();
             obj.UI.BtnProcess.ButtonPushedFcn     = @(~,~) obj.processImage();
             obj.UI.BtnReset.ButtonPushedFcn       = @(~,~) obj.resetGui();
         end
@@ -77,19 +78,45 @@ classdef App < handle
         function updateParameterPanel(obj)
             methodIndex = find(strcmp(obj.UI.MenuMethod.Value, obj.UI.MenuMethod.Items));
             if methodIndex == 1
-                obj.UI.MenuType.Items = {'Negative', 'Log', 'Gamma', 'Contrast'};
+                typeItems = {'Negative', 'Log', 'Gamma', 'Contrast'};
+                currentType = obj.UI.MenuType.Value;
+                obj.UI.MenuType.Items = typeItems;
                 obj.UI.MenuType.Enable = 'on';
-                obj.UI.MenuType.Value = 'Negative';
-                obj.UI.LblParam.Text = 'Parameter';
-                obj.UI.TxtParam.Value = '0.5';
-                obj.UI.TxtParam.Enable = 'on';
+                if ~any(strcmp(currentType, typeItems))
+                    obj.UI.MenuType.Value = 'Negative';
+                end
+
+                if any(strcmp(obj.UI.MenuType.Value, {'Negative', 'Log'}))
+                    obj.UI.LblParam.Text = 'Parameter';
+                    obj.UI.TxtParam.Value = 'Tidak diperlukan';
+                    obj.UI.TxtParam.Enable = 'off';
+                elseif strcmp(obj.UI.MenuType.Value, 'Gamma')
+                    obj.UI.LblParam.Text = 'Parameter Gamma';
+                    obj.UI.TxtParam.Value = '0.5';
+                    obj.UI.TxtParam.Enable = 'on';
+                else
+                    obj.UI.LblParam.Text = 'Rentang Contrast [low high]';
+                    obj.UI.TxtParam.Value = '[0 1]';
+                    obj.UI.TxtParam.Enable = 'on';
+                end
             elseif methodIndex == 4
-                obj.UI.MenuType.Items = {'Mean 3x3', 'Gaussian 3x3', 'Sharpen 3x3', 'Edge 3x3', 'Manual 3x3'};
+                typeItems = {'Mean 3x3', 'Gaussian 3x3', 'Sharpen 3x3', 'Edge 3x3', 'Manual 3x3'};
+                currentType = obj.UI.MenuType.Value;
+                obj.UI.MenuType.Items = typeItems;
                 obj.UI.MenuType.Enable = 'on';
-                obj.UI.MenuType.Value = 'Mean 3x3';
-                obj.UI.LblParam.Text = 'Kernel manual';
-                obj.UI.TxtParam.Value = '[1 1 1; 1 1 1; 1 1 1] / 9'; % MASIH BELUM MATRIX
-                obj.UI.TxtParam.Enable = 'on';
+                if ~any(strcmp(currentType, typeItems))
+                    obj.UI.MenuType.Value = 'Mean 3x3';
+                end
+
+                if strcmp(obj.UI.MenuType.Value, 'Manual 3x3')
+                    obj.UI.LblParam.Text = 'Kernel manual 3x3';
+                    obj.UI.TxtParam.Value = '[1 1 1; 1 1 1; 1 1 1] / 9';
+                    obj.UI.TxtParam.Enable = 'on';
+                else
+                    obj.UI.LblParam.Text = 'Parameter';
+                    obj.UI.TxtParam.Value = 'Tidak diperlukan';
+                    obj.UI.TxtParam.Enable = 'off';
+                end
             else
                 obj.UI.MenuType.Items = {'Tidak diperlukan'};
                 obj.UI.MenuType.Enable = 'off';

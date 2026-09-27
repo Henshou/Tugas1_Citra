@@ -95,8 +95,40 @@ classdef App < handle
                 obj.UI.TxtParam.Enable = 'off';
                 obj.UI.BtnSelectRef.Enable = 'on';
 
-                if ~isempty(obj.TempStepImgRef)
-                    imshow(obj.TempStepImgRef, 'Parent', obj.UI.AxRefPreview);
+                if any(strcmp(obj.UI.MenuType.Value, {'Negative', 'Log'}))
+                    obj.UI.LblParam.Text = 'Parameter';
+                    obj.UI.TxtParam.Value = 'Tidak diperlukan';
+                    obj.UI.TxtParam.Enable = 'off';
+                elseif strcmp(obj.UI.MenuType.Value, 'Gamma')
+                    obj.UI.LblParam.Text = 'Parameter Gamma';
+                    obj.UI.TxtParam.Value = '0.5';
+                    obj.UI.TxtParam.Enable = 'on';
+                else
+                    obj.UI.LblParam.Text = 'Rentang Contrast [low high]';
+                    obj.UI.TxtParam.Value = '[0 1]';
+                    obj.UI.TxtParam.Enable = 'on';
+                end
+            elseif methodIndex == 4
+                typeItems = {'Gaussian 3x3', 'Sharpen 3x3', 'Manual 3x3', 'Median'};
+                currentType = obj.UI.MenuType.Value;
+                obj.UI.MenuType.Items = typeItems;
+                obj.UI.MenuType.Enable = 'on';
+                if ~any(strcmp(currentType, typeItems))
+                    obj.UI.MenuType.Value = 'Gaussian 3x3';
+                end
+
+                if strcmp(obj.UI.MenuType.Value, 'Manual 3x3')
+                    obj.UI.LblParam.Text = 'Kernel manual 3x3';
+                    obj.UI.TxtParam.Value = '[1 1 1; 1 1 1; 1 1 1] / 9';
+                    obj.UI.TxtParam.Enable = 'on';
+                elseif strcmp(obj.UI.MenuType.Value, 'Median')
+                    obj.UI.LblParam.Text = 'Ukuran Window (ganjil, mis. 3, 5, 7)';
+                    obj.UI.TxtParam.Value = '3';
+                    obj.UI.TxtParam.Enable = 'on';
+                else
+                    obj.UI.LblParam.Text = 'Parameter';
+                    obj.UI.TxtParam.Value = 'Tidak diperlukan';
+                    obj.UI.TxtParam.Enable = 'off';
                 end
             else
                 cla(obj.UI.AxRefPreview);
@@ -319,11 +351,7 @@ classdef App < handle
 
         function runPipeline(obj)
             if isempty(obj.ImgInput)
-                uialert(obj.UI.Fig, 'Silakan pilih Citra Input Utama terlebih dahulu.', 'Input Belum Ada');
-                return;
-            end
-            if isempty(obj.PipelineSteps)
-                uialert(obj.UI.Fig, 'Recipe Pipeline masih kosong.', 'Pipeline Kosong');
+                uialert(obj.UI.Fig, 'Pilih citra input terlebih dahulu.', 'Input belum tersedia');
                 return;
             end
 
@@ -335,22 +363,8 @@ classdef App < handle
 
                 obj.UI.LblStatus.Text = 'Pipeline selesai dieksekusi.';
             catch exception
-                uialert(obj.UI.Fig, exception.message, 'Eksekusi Pipeline Gagal');
-            end
-        end
-
-        function inspectStep(obj, idx)
-            if nargin < 2
-                idx = obj.getSelectedStepIndex();
-            end
-            if idx == 0 || idx > length(obj.IntermediateImages), return; end
-
-            if idx == 1
-                stepInput = obj.ImgInput;
-                inTitle = 'Input Utama (Step 1)';
-            else
-                stepInput = obj.IntermediateImages{idx-1};
-                inTitle = sprintf('Hasil Step %d (Input Step %d)', idx-1, idx);
+                uialert(obj.UI.Fig, exception.message, 'Parameter / Pemrosesan Gagal');
+                return;
             end
 
             imshow(stepInput, 'Parent', obj.UI.AxInput);

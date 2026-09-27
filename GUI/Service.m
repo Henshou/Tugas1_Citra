@@ -35,8 +35,13 @@ classdef Service < handle
                     end
                     imgOutput = histogramMatching(imgInput, imgRef);
                 case 4
-                    kernel = obj.parseKernel(typeValue, paramStr);
-                    imgOutput = convFilt(imgInput, kernel);
+                    if strcmp(typeValue, 'Median')
+                        windowSize = obj.parseWindowSize(paramStr);
+                        imgOutput = medianFilt(imgInput, windowSize);
+                    else
+                        kernel = obj.parseKernel(typeValue, paramStr);
+                        imgOutput = convFilt(imgInput, kernel);
+                    end
                 otherwise
                     error('Metode tidak dikenali.');
             end
@@ -100,19 +105,26 @@ classdef Service < handle
         end
 
         function kernel = parseKernel(~, typeName, paramStr)
-            if strcmp(typeName, 'Mean 3x3')
-                kernel = ones(3, 3) / 9;
-            elseif strcmp(typeName, 'Gaussian 3x3')
+            %PARSEKERNEL Mengubah string parameter menjadi kernel matriks 3x3
+            disp(['typeName yang diterima: "' typeName '"']);
+            if strcmp(typeName, 'Gaussian 3x3')
                 kernel = [1 2 1; 2 4 2; 1 2 1] / 16;
             elseif strcmp(typeName, 'Sharpen 3x3')
                 kernel = [0 -1 0; -1 5 -1; 0 -1 0];
-            elseif strcmp(typeName, 'Edge 3x3')
-                kernel = [-1 -1 -1; -1 8 -1; -1 -1 -1];
             else
                 kernel = str2num(paramStr);
             end
-            if isempty(kernel) || ndims(kernel) ~= 2 || any(size(kernel) ~= [3 3]) || any(~isfinite(kernel(:)))
+
+            if isempty(kernel) || ~ismatrix(kernel) || any(size(kernel) ~= [3 3]) || any(~isfinite(kernel(:)))
                 error('Kernel harus berupa matriks 3x3 yang valid.');
+            end
+        end
+
+        function windowSize = parseWindowSize(~, paramStr)
+            %PARSEWINDOWSIZE Mengubah string parameter menjadi ukuran window
+            windowSize = round(str2double(paramStr));
+            if isnan(windowSize) || windowSize < 3 || mod(windowSize, 2) == 0
+                error('Ukuran window harus bilangan ganjil dan minimal 3 (mis. 3, 5, 7).');
             end
         end
     end

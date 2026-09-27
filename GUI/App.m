@@ -100,17 +100,21 @@ classdef App < handle
                     obj.UI.TxtParam.Enable = 'on';
                 end
             elseif methodIndex == 4
-                typeItems = {'Mean 3x3', 'Gaussian 3x3', 'Sharpen 3x3', 'Edge 3x3', 'Manual 3x3'};
+                typeItems = {'Gaussian 3x3', 'Sharpen 3x3', 'Manual 3x3', 'Median'};
                 currentType = obj.UI.MenuType.Value;
                 obj.UI.MenuType.Items = typeItems;
                 obj.UI.MenuType.Enable = 'on';
                 if ~any(strcmp(currentType, typeItems))
-                    obj.UI.MenuType.Value = 'Mean 3x3';
+                    obj.UI.MenuType.Value = 'Gaussian 3x3';
                 end
 
                 if strcmp(obj.UI.MenuType.Value, 'Manual 3x3')
                     obj.UI.LblParam.Text = 'Kernel manual 3x3';
                     obj.UI.TxtParam.Value = '[1 1 1; 1 1 1; 1 1 1] / 9';
+                    obj.UI.TxtParam.Enable = 'on';
+                elseif strcmp(obj.UI.MenuType.Value, 'Median')
+                    obj.UI.LblParam.Text = 'Ukuran Window (ganjil, mis. 3, 5, 7)';
+                    obj.UI.TxtParam.Value = '3';
                     obj.UI.TxtParam.Enable = 'on';
                 else
                     obj.UI.LblParam.Text = 'Parameter';
@@ -129,7 +133,7 @@ classdef App < handle
         function processImage(obj)
         %PROCESSIMAGE Memproses citra input sesuai metode & parameter.
             if isempty(obj.ImgInput)
-                uialert(obj.UI.MainFig, 'Pilih citra input terlebih dahulu.', 'Input belum tersedia');
+                uialert(obj.UI.Fig, 'Pilih citra input terlebih dahulu.', 'Input belum tersedia');
                 return;
             end
 
@@ -143,7 +147,7 @@ classdef App < handle
                     obj.ImgReference ...
                 );
             catch exception
-                uialert(obj.UI.MainFig, exception.message, 'Parameter / Pemrosesan Gagal');
+                uialert(obj.UI.Fig, exception.message, 'Parameter / Pemrosesan Gagal');
                 return;
             end
 

@@ -3,7 +3,8 @@
 
 clear; clc; close all;
 
-rootFolder = fileparts(mfilename('fullpath'));
+scriptFolder = fileparts(mfilename('fullpath'));
+rootFolder   = fileparts(scriptFolder);   
 addpath(fullfile(rootFolder, 'functions', 'common'));
 addpath(fullfile(rootFolder, 'functions', 'methods'));
 

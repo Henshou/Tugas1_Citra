@@ -349,22 +349,18 @@ classdef App < handle
             if isempty(idx), idx = 0; end
         end
 
-        function runPipeline(obj)
-            if isempty(obj.ImgInput)
-                uialert(obj.UI.Fig, 'Pilih citra input terlebih dahulu.', 'Input belum tersedia');
+        function inspectStep(obj, idx)
+            if idx < 1 || idx > length(obj.PipelineSteps) || ...
+                    idx > length(obj.IntermediateImages)
                 return;
             end
 
-            try
-                [obj.ImgOutput, obj.IntermediateImages] = obj.Service.processPipeline(obj.ImgInput, obj.PipelineSteps);
-                
-                lastIdx = length(obj.PipelineSteps);
-                obj.inspectStep(lastIdx);
-
-                obj.UI.LblStatus.Text = 'Pipeline selesai dieksekusi.';
-            catch exception
-                uialert(obj.UI.Fig, exception.message, 'Parameter / Pemrosesan Gagal');
-                return;
+            if idx == 1
+                stepInput = obj.ImgInput;
+                inTitle = 'Input Utama';
+            else
+                stepInput = obj.IntermediateImages{idx - 1};
+                inTitle = sprintf('Output Step %d', idx - 1);
             end
 
             imshow(stepInput, 'Parent', obj.UI.AxInput);
@@ -390,6 +386,25 @@ classdef App < handle
             obj.UI.TxtOutputFeatures.Value = obj.Service.formatFeatures(stepOutput);
 
             obj.UI.LblStatus.Text = sprintf('Menampilkan inspeksi Step %d.', idx);
+        end
+
+        function runPipeline(obj)
+            if isempty(obj.ImgInput)
+                uialert(obj.UI.Fig, 'Pilih citra input terlebih dahulu.', 'Input belum tersedia');
+                return;
+            end
+
+            try
+                [obj.ImgOutput, obj.IntermediateImages] = obj.Service.processPipeline(obj.ImgInput, obj.PipelineSteps);
+                
+                lastIdx = length(obj.PipelineSteps);
+                obj.inspectStep(lastIdx);
+
+                obj.UI.LblStatus.Text = 'Pipeline selesai dieksekusi.';
+            catch exception
+                uialert(obj.UI.Fig, exception.message, 'Parameter / Pemrosesan Gagal');
+                return;
+            end
         end
 
         function resetGui(obj)

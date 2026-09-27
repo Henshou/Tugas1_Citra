@@ -83,7 +83,7 @@ classdef Layout < handle
             obj.buildVisualization(midGrid, colors); % Right
 
             % Bot
-            obj.buildStatusBar(colors);
+            obj.buildStatus(colors);
         end
 
         function colors = createColorScheme(~)

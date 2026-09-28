@@ -34,18 +34,20 @@ classdef Layout < handle
         PnlOut            matlab.ui.container.Panel
 
         AxInput           matlab.ui.control.UIAxes
-        AxInputHist       matlab.ui.control.UIAxes
+        BtnHistInput      matlab.ui.control.Button
         TxtInputFeatures  matlab.ui.control.TextArea
 
         AxRef             matlab.ui.control.UIAxes
-        AxRefHist         matlab.ui.control.UIAxes
+        BtnHistRef        matlab.ui.control.Button
         TxtRefFeatures    matlab.ui.control.TextArea
 
         AxOutput          matlab.ui.control.UIAxes
-        AxOutputHist      matlab.ui.control.UIAxes
+        BtnHistOutput     matlab.ui.control.Button
         TxtOutputFeatures matlab.ui.control.TextArea
 
         LblStatus         matlab.ui.control.Label
+
+        HistFigs          cell = cell(1, 3)
 
         Colors            struct 
     end
@@ -106,7 +108,76 @@ classdef Layout < handle
             end
         end
 
+        function showHistogram(obj, slot, img, titleText)
+        % SHOWHISTOGRAM Buka/perbarui jendela histogram terpisah.
+        % Citra RGB -> 3 plot (R,G,B); grayscale -> 1 plot.
+        
+            if isempty(img), return; end
+
+            if isempty(obj.HistFigs{slot}) || ~isvalid(obj.HistFigs{slot})
+                offset = 30 * (slot - 1);
+                obj.HistFigs{slot} = uifigure( ...
+                    'Position', [160 + offset, 100 - offset, 720, 700], ...
+                    'Color', obj.Colors.background);
+            end
+            histFig = obj.HistFigs{slot};
+            histFig.Name = ['Histogram - ' titleText];
+            histFig.Visible = 'on';
+            delete(histFig.Children);
+
+            analysis = imageAnalysis(img);
+            if analysis.isColor
+                histData   = {analysis.hist.R, analysis.hist.G, analysis.hist.B};
+                chanNames  = {'Red', 'Green', 'Blue'};
+                chanColors = {'r', 'g', 'b'};
+            else
+                histData   = {analysis.hist};
+                chanNames  = {'Grayscale'};
+                chanColors = {[0.8 0.8 0.8]};
+            end
+
+            numPlots = numel(histData);
+            histGrid = uigridlayout(histFig, [numPlots, 1]);   % bukan "grid": jangan menimpa fungsi grid()
+            histGrid.RowHeight = repmat({'1x'}, 1, numPlots);
+            histGrid.RowSpacing = 8;
+            histGrid.Padding = [10 10 10 10];
+
+            for i = 1:numPlots
+                ax = uiaxes(histGrid, ...
+                    'BackgroundColor', obj.Colors.axis, ...
+                    'XColor', obj.Colors.axisText, ...
+                    'YColor', obj.Colors.axisText);
+                bar(ax, 0:255, histData{i}, 'FaceColor', chanColors{i}, ...
+                    'EdgeColor', 'none');
+                xlim(ax, [0 255]);
+                grid(ax, 'on');
+                title(ax, chanNames{i}, 'Color', [0.9 0.9 0.9]);
+            end
+        end
+
+        function refreshHistogram(obj, slot, img, titleText)
+        % REFRESHHISTOGRAM Perbarui jendela histogram HANYA jika sedang terbuka.
+            fig = obj.HistFigs{slot};
+            if ~isempty(fig) && isvalid(fig) && strcmp(fig.Visible, 'on')
+                if isempty(img)
+                    fig.Visible = 'off';
+                else
+                    obj.showHistogram(slot, img, titleText);
+                end
+            end
+        end
+
+        function closeHistograms(obj)
+            for k = 1:numel(obj.HistFigs)
+                if ~isempty(obj.HistFigs{k}) && isvalid(obj.HistFigs{k})
+                    delete(obj.HistFigs{k});
+                end
+            end
+            obj.HistFigs = cell(1, 3);
+        end
+
         function delete(obj)
+            obj.closeHistograms();
             if isvalid(obj.Fig)
                 delete(obj.Fig);
             end
@@ -291,15 +362,15 @@ classdef Layout < handle
             obj.GridVis.ColumnSpacing = 8;
             obj.GridVis.Padding = [0 0 0 0];
 
-            [obj.PnlIn, obj.AxInput, obj.AxInputHist, obj.TxtInputFeatures] = ...
+            [obj.PnlIn, obj.AxInput, obj.BtnHistInput, obj.TxtInputFeatures] = ...
                 obj.createVisualizationPanel(' Citra Masukan Step ', colors, true);
-            [obj.PnlRef, obj.AxRef, obj.AxRefHist, obj.TxtRefFeatures] = ...
+            [obj.PnlRef, obj.AxRef, obj.BtnHistRef, obj.TxtRefFeatures] = ...
                 obj.createVisualizationPanel(' Citra Referensi Step ', colors, false);
-            [obj.PnlOut, obj.AxOutput, obj.AxOutputHist, obj.TxtOutputFeatures] = ...
+            [obj.PnlOut, obj.AxOutput, obj.BtnHistOutput, obj.TxtOutputFeatures] = ...
                 obj.createVisualizationPanel(' Hasil Output Step ', colors, true);
         end
 
-        function [panel, imageAxes, histogramAxes, featureText] = ...
+        function [panel, imageAxes, histButton, featureText] = ...
                 createVisualizationPanel(obj, titleText, colors, visible)
 
             visibility = 'off';
@@ -311,15 +382,16 @@ classdef Layout < handle
                 'FontWeight', 'bold', 'ForegroundColor', colors.text, ...
                 'BackgroundColor', colors.panel, 'Visible', visibility);
 
-            grid = uigridlayout(panel, [3, 1]);
-            grid.RowHeight = {'1x', 140, 80};
-            grid.RowSpacing = 6;
-            grid.Padding = [4 4 4 4];
+            panelGrid = uigridlayout(panel, [3, 1]);
+            panelGrid.RowHeight = {'1x', 30, 80};
+            panelGrid.RowSpacing = 6;
+            panelGrid.Padding = [4 4 4 4];
 
-            imageAxes = obj.createPreviewAxes(grid, colors);
-            histogramAxes = uiaxes(grid, 'BackgroundColor', colors.axis, ...
-                'XColor', colors.axisText, 'YColor', colors.axisText);
-            featureText = uitextarea(grid, 'Editable', 'off', ...
+            imageAxes = obj.createPreviewAxes(panelGrid, colors);
+            histButton = uibutton(panelGrid, 'push', 'Text', 'Tampilkan Histogram', ...
+                'BackgroundColor', colors.secondary, 'FontColor', 'white', ...
+                'FontWeight', 'bold');
+            featureText = uitextarea(panelGrid, 'Editable', 'off', ...
                 'BackgroundColor', colors.background, 'FontColor', colors.textDark, ...
                 'FontWeight', 'bold');
         end

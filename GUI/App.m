@@ -14,6 +14,10 @@ classdef App < handle
         TempStepImgRef     uint8  = []
         TempStepRefName    char   = ''
 
+        ShownImgs          cell = cell(1, 3) 
+        ShownTitles        cell = cell(1, 3)
+
+        LastConfigKey      char = ''           
         IsUpdatingUI       logical = false
     end
 
@@ -54,6 +58,10 @@ classdef App < handle
 
             obj.UI.BtnRunPipeline.ButtonPushedFcn  = @(~,~) obj.runPipeline();
             obj.UI.BtnReset.ButtonPushedFcn        = @(~,~) obj.resetGui();
+
+            obj.UI.BtnHistInput.ButtonPushedFcn    = @(~,~) obj.openHistogram(1);
+            obj.UI.BtnHistRef.ButtonPushedFcn      = @(~,~) obj.openHistogram(2);
+            obj.UI.BtnHistOutput.ButtonPushedFcn   = @(~,~) obj.openHistogram(3);
         end
 
         function selectInput(obj)
@@ -88,6 +96,7 @@ classdef App < handle
             obj.UI.BtnSelectRef.Enable = 'off';
 
             if methodIndex == 3
+                obj.LastConfigKey = '';
                 obj.UI.MenuType.Items = {'Standard'};
                 obj.UI.MenuType.Enable = 'off';
                 obj.UI.LblParam.Text = 'Parameter:';
@@ -108,6 +117,9 @@ classdef App < handle
                     obj.UI.MenuType.Value = 'Gaussian 3x3';
                 end
                 currentType = obj.UI.MenuType.Value;
+                configKey = sprintf('4|%s', currentType);
+                configChanged = ~strcmp(configKey, obj.LastConfigKey);
+                obj.LastConfigKey = configKey;
 
                 if startsWith(currentType, 'Manual')
                     n = obj.parseKernelSizeFromType(currentType);
@@ -125,7 +137,9 @@ classdef App < handle
                     obj.UI.LblParam.Text = 'Ukuran Window (ganjil, mis. 3, 5, 7)';
                     obj.UI.LblParam.Visible = 'on';
                     obj.UI.TxtParam.Visible = 'on';
-                    obj.UI.TxtParam.Value = '3';
+                    if configChanged || isempty(obj.UI.TxtParam.Value) || isnan(str2double(obj.UI.TxtParam.Value))
+                        obj.UI.TxtParam.Value = '3';
+                    end
                     obj.UI.TxtParam.Enable = 'on';
                     obj.UI.PnlKernelGrid.Visible = 'off';
                 else
@@ -148,15 +162,19 @@ classdef App < handle
                     obj.UI.MenuType.Items = typeItems;
                     obj.UI.MenuType.Enable = 'on';
 
+                    configKey = sprintf('1|%s', obj.UI.MenuType.Value);
+                    configChanged = ~strcmp(configKey, obj.LastConfigKey);
+                    obj.LastConfigKey = configKey;
+
                     if strcmp(obj.UI.MenuType.Value, 'Gamma')
                         obj.UI.LblParam.Text = 'Parameter Gamma:';
-                        if isempty(obj.UI.TxtParam.Value) || strcmp(obj.UI.TxtParam.Value, 'Tidak diperlukan')
+                        if configChanged || isempty(obj.UI.TxtParam.Value)
                             obj.UI.TxtParam.Value = '0.5';
                         end
                         obj.UI.TxtParam.Enable = 'on';
                     elseif strcmp(obj.UI.MenuType.Value, 'Contrast')
                         obj.UI.LblParam.Text = 'Rentang Contrast [low high]:';
-                        if isempty(obj.UI.TxtParam.Value) || strcmp(obj.UI.TxtParam.Value, 'Tidak diperlukan')
+                        if configChanged || isempty(obj.UI.TxtParam.Value)
                             obj.UI.TxtParam.Value = '[0 1]';
                         end
                         obj.UI.TxtParam.Enable = 'on';
@@ -166,6 +184,7 @@ classdef App < handle
                         obj.UI.TxtParam.Enable = 'off';
                     end
                 else
+                    obj.LastConfigKey = '';
                     obj.UI.MenuType.Items = {'Standard'};
                     obj.UI.MenuType.Enable = 'off';
                     obj.UI.LblParam.Text = 'Parameter:';
@@ -382,7 +401,9 @@ classdef App < handle
 
             imshow(stepInput, 'Parent', obj.UI.AxInput);
             title(obj.UI.AxInput, inTitle, 'Color', 'w');
-            obj.Service.plotHistogramToAxes(stepInput, obj.UI.AxInputHist, 'Histogram Input Step');
+            obj.ShownImgs{1} = stepInput;
+            obj.ShownTitles{1} = ['Input Step ' num2str(idx)];
+            obj.UI.refreshHistogram(1, obj.ShownImgs{1}, obj.ShownTitles{1});
             obj.UI.TxtInputFeatures.Value = obj.Service.formatFeatures(stepInput);
 
             stepInfo = obj.PipelineSteps(idx);
@@ -390,19 +411,35 @@ classdef App < handle
                 obj.UI.setReferenceVisible(true);
                 imshow(stepInfo.ImgRef, 'Parent', obj.UI.AxRef);
                 title(obj.UI.AxRef, ['Ref: ' stepInfo.RefName], 'Interpreter', 'none', 'Color', 'w');
-                obj.Service.plotHistogramToAxes(stepInfo.ImgRef, obj.UI.AxRefHist, 'Histogram Reference');
+                obj.ShownImgs{2} = stepInfo.ImgRef;
+                obj.ShownTitles{2} = ['Referensi ' stepInfo.RefName];
+                obj.UI.refreshHistogram(2, obj.ShownImgs{2}, obj.ShownTitles{2});
                 obj.UI.TxtRefFeatures.Value = obj.Service.formatFeatures(stepInfo.ImgRef);
             else
                 obj.UI.setReferenceVisible(false);
+                obj.ShownImgs{2} = [];
+                obj.ShownTitles{2} = '';
+                obj.UI.refreshHistogram(2, [], '');
             end
 
             stepOutput = obj.IntermediateImages{idx};
             imshow(stepOutput, 'Parent', obj.UI.AxOutput);
             title(obj.UI.AxOutput, sprintf('Hasil Output Step %d', idx), 'Color', 'w');
-            obj.Service.plotHistogramToAxes(stepOutput, obj.UI.AxOutputHist, sprintf('Histogram Output Step %d', idx));
+            obj.ShownImgs{3} = stepOutput;
+            obj.ShownTitles{3} = sprintf('Output Step %d', idx);
+            obj.UI.refreshHistogram(3, obj.ShownImgs{3}, obj.ShownTitles{3});
             obj.UI.TxtOutputFeatures.Value = obj.Service.formatFeatures(stepOutput);
 
             obj.UI.LblStatus.Text = sprintf('Menampilkan inspeksi Step %d.', idx);
+        end
+
+        function openHistogram(obj, slot)
+            if isempty(obj.ShownImgs{slot})
+                uialert(obj.UI.Fig, 'Belum ada citra untuk ditampilkan. Jalankan pipeline terlebih dahulu.', ...
+                    'Histogram tidak tersedia');
+                return;
+            end
+            obj.UI.showHistogram(slot, obj.ShownImgs{slot}, obj.ShownTitles{slot});
         end
 
         function runPipeline(obj)
@@ -434,9 +471,11 @@ classdef App < handle
             obj.TempStepRefName = '';
 
             cla(obj.UI.AxInputPreview); cla(obj.UI.AxRefPreview);
-            cla(obj.UI.AxInput);        cla(obj.UI.AxInputHist);
-            cla(obj.UI.AxRef);          cla(obj.UI.AxRefHist);
-            cla(obj.UI.AxOutput);       cla(obj.UI.AxOutputHist);
+            cla(obj.UI.AxInput);
+            cla(obj.UI.AxRef);
+            cla(obj.UI.AxOutput);
+            obj.ShownImgs = cell(1, 3);
+            obj.ShownTitles = cell(1, 3);
 
             obj.UI.LblInput.Text = 'Input: Belum dipilih';
             obj.UI.LblReference.Text = 'Ref: -';
@@ -447,6 +486,7 @@ classdef App < handle
             obj.UI.LstPipeline.Value = {};
             obj.UI.BtnAddStep.Text = '+ Tambah ke Recipe Stream';
             obj.UI.setReferenceVisible(false);
+            obj.UI.closeHistograms();
             obj.UI.LblStatus.Text = 'Reset selesai.';
 
             obj.updateParameterPanel();

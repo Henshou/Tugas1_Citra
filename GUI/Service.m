@@ -47,32 +47,6 @@ classdef Service < handle
             end
         end
 
-        function plotHistogramToAxes(~, img, targetAxes, titleStr)
-            cla(targetAxes);
-            if isempty(img)
-                title(targetAxes, '');
-                return;
-            end
-
-            analysis = imageAnalysis(img);
-            if analysis.isColor
-                hold(targetAxes, 'on');
-                stem(targetAxes, 0:255, analysis.hist.R, 'r', 'Marker', 'none');
-                stem(targetAxes, 0:255, analysis.hist.G, 'g', 'Marker', 'none');
-                stem(targetAxes, 0:255, analysis.hist.B, 'b', 'Marker', 'none');
-                hold(targetAxes, 'off');
-            else
-                bar(targetAxes, 0:255, analysis.hist, 'k', 'EdgeColor', 'none');
-            end
-            
-            xlim(targetAxes, [0 255]);
-            grid(targetAxes, 'on');
-            targetAxes.XColor = [0.8 0.8 0.8];
-            targetAxes.YColor = [0.8 0.8 0.8];
-            targetAxes.FontSize = 8;
-            title(targetAxes, titleStr, 'Color', [0.9 0.9 0.9], 'FontSize', 9);
-        end
-
         function lines = formatFeatures(~, img)
             if isempty(img), lines = {''}; return; end
             analysis = imageAnalysis(img);

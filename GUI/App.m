@@ -8,12 +8,12 @@ classdef App < handle
         ImgInput           uint8
         ImgOutput          uint8
         InputName          char = ''
-        
+
         PipelineSteps      struct = struct('MethodIndex', {}, 'MethodName', {}, 'TypeValue', {}, 'ParamStr', {}, 'ImgRef', {}, 'RefName', {})
         IntermediateImages cell   = {}
         TempStepImgRef     uint8  = []
         TempStepRefName    char   = ''
-        
+
         IsUpdatingUI       logical = false
     end
 
@@ -86,58 +86,68 @@ classdef App < handle
         function updateParameterPanel(obj)
             methodIndex = find(strcmp(obj.UI.MenuMethod.Value, obj.UI.MenuMethod.Items));
             obj.UI.BtnSelectRef.Enable = 'off';
-            
+
             if methodIndex == 3
                 obj.UI.MenuType.Items = {'Standard'};
                 obj.UI.MenuType.Enable = 'off';
                 obj.UI.LblParam.Text = 'Parameter:';
+                obj.UI.LblParam.Visible = 'on';
+                obj.UI.TxtParam.Visible = 'on';
                 obj.UI.TxtParam.Value = 'Membutuhkan Reference';
                 obj.UI.TxtParam.Enable = 'off';
+                obj.UI.PnlKernelGrid.Visible = 'off';
                 obj.UI.BtnSelectRef.Enable = 'on';
 
-                if any(strcmp(obj.UI.MenuType.Value, {'Negative', 'Log'}))
-                    obj.UI.LblParam.Text = 'Parameter';
-                    obj.UI.TxtParam.Value = 'Tidak diperlukan';
-                    obj.UI.TxtParam.Enable = 'off';
-                elseif strcmp(obj.UI.MenuType.Value, 'Gamma')
-                    obj.UI.LblParam.Text = 'Parameter Gamma';
-                    obj.UI.TxtParam.Value = '0.5';
-                    obj.UI.TxtParam.Enable = 'on';
-                else
-                    obj.UI.LblParam.Text = 'Rentang Contrast [low high]';
-                    obj.UI.TxtParam.Value = '[0 1]';
-                    obj.UI.TxtParam.Enable = 'on';
-                end
             elseif methodIndex == 4
-                typeItems = {'Gaussian 3x3', 'Sharpen 3x3', 'Manual 3x3', 'Median'};
+                typeItems = {'Gaussian 3x3', 'Sharpen 3x3', ...
+                             'Manual 3x3', 'Manual 5x5', 'Manual 7x7', 'Median'};
                 currentType = obj.UI.MenuType.Value;
                 obj.UI.MenuType.Items = typeItems;
                 obj.UI.MenuType.Enable = 'on';
                 if ~any(strcmp(currentType, typeItems))
                     obj.UI.MenuType.Value = 'Gaussian 3x3';
                 end
+                currentType = obj.UI.MenuType.Value;
 
-                if strcmp(obj.UI.MenuType.Value, 'Manual 3x3')
-                    obj.UI.LblParam.Text = 'Kernel manual 3x3';
-                    obj.UI.TxtParam.Value = '[1 1 1; 1 1 1; 1 1 1] / 9';
-                    obj.UI.TxtParam.Enable = 'on';
-                elseif strcmp(obj.UI.MenuType.Value, 'Median')
+                if startsWith(currentType, 'Manual')
+                    n = obj.parseKernelSizeFromType(currentType);
+
+                    obj.UI.LblParam.Text = sprintf('Kernel Manual %dx%d (isi tiap sel di bawah)', n, n);
+                    obj.UI.LblParam.Visible = 'on';
+                    obj.UI.TxtParam.Visible = 'off';   
+                    obj.UI.TxtParam.Enable = 'off';
+
+                    obj.UI.PnlKernelGrid.Visible = 'on';
+                    if isempty(obj.UI.KernelFields) || size(obj.UI.KernelFields, 1) ~= n
+                        obj.UI.BuildKernelGrid(n);
+                    end
+                elseif strcmp(currentType, 'Median')
                     obj.UI.LblParam.Text = 'Ukuran Window (ganjil, mis. 3, 5, 7)';
+                    obj.UI.LblParam.Visible = 'on';
+                    obj.UI.TxtParam.Visible = 'on';
                     obj.UI.TxtParam.Value = '3';
                     obj.UI.TxtParam.Enable = 'on';
+                    obj.UI.PnlKernelGrid.Visible = 'off';
                 else
                     obj.UI.LblParam.Text = 'Parameter';
+                    obj.UI.LblParam.Visible = 'on';
+                    obj.UI.TxtParam.Visible = 'on';
                     obj.UI.TxtParam.Value = 'Tidak diperlukan';
                     obj.UI.TxtParam.Enable = 'off';
+                    obj.UI.PnlKernelGrid.Visible = 'off';
                 end
+
             else
                 cla(obj.UI.AxRefPreview);
+                obj.UI.PnlKernelGrid.Visible = 'off';
+                obj.UI.LblParam.Visible = 'on';
+                obj.UI.TxtParam.Visible = 'on';
 
                 if methodIndex == 1
                     typeItems = {'Negative', 'Log', 'Gamma', 'Contrast'};
                     obj.UI.MenuType.Items = typeItems;
                     obj.UI.MenuType.Enable = 'on';
-                    
+
                     if strcmp(obj.UI.MenuType.Value, 'Gamma')
                         obj.UI.LblParam.Text = 'Parameter Gamma:';
                         if isempty(obj.UI.TxtParam.Value) || strcmp(obj.UI.TxtParam.Value, 'Tidak diperlukan')
@@ -155,23 +165,6 @@ classdef App < handle
                         obj.UI.TxtParam.Value = 'Tidak diperlukan';
                         obj.UI.TxtParam.Enable = 'off';
                     end
-
-                elseif methodIndex == 4
-                    typeItems = {'Mean 3x3', 'Gaussian 3x3', 'Sharpen 3x3', 'Edge 3x3', 'Manual 3x3'};
-                    obj.UI.MenuType.Items = typeItems;
-                    obj.UI.MenuType.Enable = 'on';
-
-                    if strcmp(obj.UI.MenuType.Value, 'Manual 3x3')
-                        obj.UI.LblParam.Text = 'Kernel Manual 3x3:';
-                        if isempty(obj.UI.TxtParam.Value) || strcmp(obj.UI.TxtParam.Value, 'Tidak diperlukan')
-                            obj.UI.TxtParam.Value = '[1 1 1; 1 1 1; 1 1 1]/9';
-                        end
-                        obj.UI.TxtParam.Enable = 'on';
-                    else
-                        obj.UI.LblParam.Text = 'Parameter:';
-                        obj.UI.TxtParam.Value = 'Tidak diperlukan';
-                        obj.UI.TxtParam.Enable = 'off';
-                    end
                 else
                     obj.UI.MenuType.Items = {'Standard'};
                     obj.UI.MenuType.Enable = 'off';
@@ -182,22 +175,38 @@ classdef App < handle
             end
         end
 
+        function n = parseKernelSizeFromType(~, typeValue)
+            tokens = regexp(typeValue, '(\d+)x\d+', 'tokens');
+            n = str2double(tokens{1}{1});
+        end
+
         function onConfigChanged(obj)
             if obj.IsUpdatingUI, return; end
-            
+
             obj.updateParameterPanel();
-            
+
             idx = obj.getSelectedStepIndex();
             if idx > 0
                 obj.PipelineSteps(idx).MethodIndex = find(strcmp(obj.UI.MenuMethod.Value, obj.UI.MenuMethod.Items));
                 obj.PipelineSteps(idx).MethodName  = obj.UI.MenuMethod.Value;
                 obj.PipelineSteps(idx).TypeValue   = obj.UI.MenuType.Value;
-                obj.PipelineSteps(idx).ParamStr    = obj.UI.TxtParam.Value;
+                obj.PipelineSteps(idx).ParamStr    = obj.getCurrentParamStr();
                 obj.PipelineSteps(idx).ImgRef      = obj.TempStepImgRef;
                 obj.PipelineSteps(idx).RefName     = obj.TempStepRefName;
-                
+
                 obj.refreshPipelineList();
                 obj.UI.LstPipeline.Value = {obj.UI.LstPipeline.Items{idx}};
+            end
+        end
+
+        function paramStr = getCurrentParamStr(obj)
+            methodIdx = find(strcmp(obj.UI.MenuMethod.Value, obj.UI.MenuMethod.Items));
+            typeVal   = obj.UI.MenuType.Value;
+
+            if methodIdx == 4 && startsWith(typeVal, 'Manual')
+                paramStr = mat2str(obj.UI.GetKernelMatrix());
+            else
+                paramStr = obj.UI.TxtParam.Value;
             end
         end
 
@@ -205,7 +214,7 @@ classdef App < handle
             methodIdx  = find(strcmp(obj.UI.MenuMethod.Value, obj.UI.MenuMethod.Items));
             methodName = obj.UI.MenuMethod.Value;
             typeVal    = obj.UI.MenuType.Value;
-            paramVal   = obj.UI.TxtParam.Value;
+            paramVal   = obj.getCurrentParamStr();
             selectedIdx = obj.getSelectedStepIndex();
 
             if methodIdx == 3 && isempty(obj.TempStepImgRef)
@@ -247,18 +256,26 @@ classdef App < handle
             obj.UI.BtnAddStep.Text = 'Update Recipe';
 
             st = obj.PipelineSteps(idx);
-            
+
             obj.IsUpdatingUI = true;
             obj.UI.MenuMethod.Value = st.MethodName;
             obj.updateParameterPanel();
-            
+
             if any(strcmp(st.TypeValue, obj.UI.MenuType.Items))
                 obj.UI.MenuType.Value = st.TypeValue;
+                obj.updateParameterPanel(); 
             end
-            obj.UI.TxtParam.Value = st.ParamStr;
+
+            if st.MethodIndex == 4 && startsWith(st.TypeValue, 'Manual')
+                mat = str2num(st.ParamStr); 
+                obj.UI.SetKernelMatrix(mat);
+            else
+                obj.UI.TxtParam.Value = st.ParamStr;
+            end
+
             obj.TempStepImgRef = st.ImgRef;
             obj.TempStepRefName = st.RefName;
-            
+
             if ~isempty(st.RefName)
                 obj.UI.LblReference.Text = st.RefName;
                 imshow(st.ImgRef, 'Parent', obj.UI.AxRefPreview);
@@ -396,7 +413,7 @@ classdef App < handle
 
             try
                 [obj.ImgOutput, obj.IntermediateImages] = obj.Service.processPipeline(obj.ImgInput, obj.PipelineSteps);
-                
+
                 lastIdx = length(obj.PipelineSteps);
                 obj.inspectStep(lastIdx);
 

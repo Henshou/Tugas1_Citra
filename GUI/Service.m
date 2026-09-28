@@ -105,8 +105,6 @@ classdef Service < handle
         end
 
         function kernel = parseKernel(~, typeName, paramStr)
-            %PARSEKERNEL Mengubah string parameter menjadi kernel matriks 3x3
-            disp(['typeName yang diterima: "' typeName '"']);
             if strcmp(typeName, 'Gaussian 3x3')
                 kernel = [1 2 1; 2 4 2; 1 2 1] / 16;
             elseif strcmp(typeName, 'Sharpen 3x3')
@@ -115,13 +113,16 @@ classdef Service < handle
                 kernel = str2num(paramStr);
             end
 
-            if isempty(kernel) || ~ismatrix(kernel) || any(size(kernel) ~= [3 3]) || any(~isfinite(kernel(:)))
-                error('Kernel harus berupa matriks 3x3 yang valid.');
+            if isempty(kernel) || ~ismatrix(kernel) || any(~isfinite(kernel(:)))
+                error('Kernel harus berupa matriks yang valid.');
+            end
+            [kh, kw] = size(kernel);
+            if kh ~= kw || mod(kh, 2) == 0
+                error('Kernel harus berupa matriks persegi berukuran ganjil (mis. 3x3, 5x5, 7x7).');
             end
         end
 
         function windowSize = parseWindowSize(~, paramStr)
-            %PARSEWINDOWSIZE Mengubah string parameter menjadi ukuran window
             windowSize = round(str2double(paramStr));
             if isnan(windowSize) || windowSize < 3 || mod(windowSize, 2) == 0
                 error('Ukuran window harus bilangan ganjil dan minimal 3 (mis. 3, 5, 7).');

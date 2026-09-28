@@ -3,16 +3,19 @@ classdef Layout < handle
     properties (SetAccess = private)
         Fig               matlab.ui.Figure
         MainGrid          matlab.ui.container.GridLayout
-        
+
         BtnSelectInput    matlab.ui.control.Button
         AxInputPreview    matlab.ui.control.UIAxes
         LblInput          matlab.ui.control.Label
-        
+
         MenuMethod        matlab.ui.control.DropDown
         MenuType          matlab.ui.control.DropDown
         LblParam          matlab.ui.control.Label
         TxtParam          matlab.ui.control.EditField
-        
+
+        PnlKernelGrid     matlab.ui.container.Panel
+        KernelFields      cell = {}   
+
         BtnSelectRef      matlab.ui.control.Button
         AxRefPreview      matlab.ui.control.UIAxes
         LblReference      matlab.ui.control.Label
@@ -29,7 +32,7 @@ classdef Layout < handle
         PnlIn             matlab.ui.container.Panel
         PnlRef            matlab.ui.container.Panel
         PnlOut            matlab.ui.container.Panel
-        
+
         AxInput           matlab.ui.control.UIAxes
         AxInputHist       matlab.ui.control.UIAxes
         TxtInputFeatures  matlab.ui.control.TextArea
@@ -41,8 +44,10 @@ classdef Layout < handle
         AxOutput          matlab.ui.control.UIAxes
         AxOutputHist      matlab.ui.control.UIAxes
         TxtOutputFeatures matlab.ui.control.TextArea
-        
+
         LblStatus         matlab.ui.control.Label
+
+        Colors            struct 
     end
 
     methods
@@ -60,6 +65,47 @@ classdef Layout < handle
             end
         end
 
+        function BuildKernelGrid(obj, n)
+            delete(obj.PnlKernelGrid.Children);
+
+            innerGrid = uigridlayout(obj.PnlKernelGrid, [n, n]);
+            innerGrid.RowSpacing = 2;
+            innerGrid.ColumnSpacing = 2;
+            innerGrid.Padding = [4 4 4 4];
+
+            obj.KernelFields = cell(n, n);
+            for i = 1:n
+                for j = 1:n
+                    obj.KernelFields{i, j} = uieditfield(innerGrid, 'numeric', ...
+                        'Value', 0, 'BackgroundColor', 'white', ...
+                        'FontColor', obj.Colors.textDark, 'FontSize', 9, ...
+                        'HorizontalAlignment', 'center');
+                end
+            end
+        end
+
+        function mat = GetKernelMatrix(obj)
+            n = size(obj.KernelFields, 1);
+            mat = zeros(n, n);
+            for i = 1:n
+                for j = 1:n
+                    mat(i, j) = obj.KernelFields{i, j}.Value;
+                end
+            end
+        end
+
+        function SetKernelMatrix(obj, mat)
+            n = size(mat, 1);
+            if isempty(obj.KernelFields) || size(obj.KernelFields, 1) ~= n
+                obj.BuildKernelGrid(n);
+            end
+            for i = 1:n
+                for j = 1:n
+                    obj.KernelFields{i, j}.Value = mat(i, j);
+                end
+            end
+        end
+
         function delete(obj)
             if isvalid(obj.Fig)
                 delete(obj.Fig);
@@ -71,8 +117,9 @@ classdef Layout < handle
         function buildUI(obj, closeRequestCallback)
         % BUILDUI Main method untuk membangun seluruh UI
             colors = obj.createColorScheme();
+            obj.Colors = colors;   % simpan supaya bisa dipakai BuildKernelGrid nanti
             obj.createMainWindow(closeRequestCallback, colors);
-            
+
             % Top
             obj.buildHeader(colors);
 
@@ -87,7 +134,6 @@ classdef Layout < handle
         end
 
         function colors = createColorScheme(~)
-        % CREATECOLORSCHEME Membuat skema warna
             colors.background = [0.95 0.96 0.98];
             colors.card =       [0.90 0.92 0.95];
             colors.panel =      [0.13 0.15 0.18];
@@ -103,23 +149,17 @@ classdef Layout < handle
         end
 
         function createMainWindow(obj, closeRequestCallback, colors)
-        % CREATEMAINWINDOW Membuat jendela utama aplikasi, sebagai komponen root
             obj.Fig = uifigure('Name', 'Image Enhancement', ...
                 'Position', [30 30 1450 820], 'Color', colors.background, ...
                 'CloseRequestFcn', closeRequestCallback);
-            
-            % Bagi menjadi 1 kolom 3 baris (top, mid, bot)
-            obj.MainGrid = uigridlayout(obj.Fig, [3, 1]); 
+
+            obj.MainGrid = uigridlayout(obj.Fig, [3, 1]);
             obj.MainGrid.RowHeight = {45, '1x', 30};
             obj.MainGrid.Padding = [10 10 10 10];
             obj.MainGrid.RowSpacing = 8;
         end
 
-
-
-
         function buildHeader(obj, colors)
-        % CREATEHEADER Membuat header di grid 1 (Top) pada main grid
             header = uipanel(obj.MainGrid, 'BackgroundColor', colors.card, 'BorderType', 'none');
             header.Layout.Row = 1;
             uilabel(header, 'Text', 'Image Enhancement Pipeline', ...
@@ -127,12 +167,7 @@ classdef Layout < handle
                 'Position', [15 8 500 30]);
         end
 
-
-
-
         function midGrid = createMidGrid(obj)
-        % CREATEMIDGRID Membagi grid 2 (Mid) menjadi 3 kolom untuk menampung 
-        % panel kontrol, recipe, dan visualisasi
             midGrid = uigridlayout(obj.MainGrid, [1, 3]);
             midGrid.Layout.Row = 2;
             midGrid.ColumnWidth = {300, 250, '1x'};
@@ -146,9 +181,9 @@ classdef Layout < handle
                 'FontWeight', 'bold', 'ForegroundColor', colors.text, ...
                 'BackgroundColor', colors.panel);
 
-            % Bagi menjadi 10 baris untuk tiap field dan tombol
-            gridControl = uigridlayout(panel, [10, 1]);
-            gridControl.RowHeight = {32, 65, 22, 32, 22, 32, 22, 32, 65, 35};
+            % Bagi menjadi 11 baris
+            gridControl = uigridlayout(panel, [11, 1]);
+            gridControl.RowHeight = {32, 65, 22, 32, 22, 32, 22, 32, 110, 65, 35};
             gridControl.RowSpacing = 4;
             gridControl.Padding = [8 8 8 8];
 
@@ -178,11 +213,16 @@ classdef Layout < handle
             obj.MenuType = uidropdown(gridControl, 'Items', {'Negative'}, ...
                 'BackgroundColor', colors.secondary, 'FontColor', 'white');
 
-            % Parameter
+            % Parameter 
             obj.LblParam = uilabel(gridControl, 'Text', 'Parameter:', ...
                 'FontWeight', 'bold', 'FontColor', colors.text);
             obj.TxtParam = uieditfield(gridControl, 'text', 'Value', '', ...
                 'BackgroundColor', 'white', 'FontColor', colors.textDark);
+
+            % Kernel Manual Grid 
+            obj.PnlKernelGrid = uipanel(gridControl, 'Title', 'Kernel Manual (isi tiap sel)', ...
+                'FontWeight', 'bold', 'ForegroundColor', colors.text, ...
+                'BackgroundColor', colors.panel, 'Visible', 'off');
 
             % Reference Image
             referencePreview = uigridlayout(gridControl, [1, 2]);
@@ -245,16 +285,12 @@ classdef Layout < handle
         end
 
         function buildVisualization(obj, midGrid, colors)
-        % BUILDVISUALIZATION Membuat panel visualisasi di grid 3 (Right) dari midGrid
-
-            % Bagi menjadi 3 kolom untuk input, referensi, dan output
             obj.GridVis = uigridlayout(midGrid, [1, 3]);
             obj.GridVis.ColumnWidth = {'1x', 0, '1x'};
             obj.GridVis.RowHeight = {'1x'};
             obj.GridVis.ColumnSpacing = 8;
             obj.GridVis.Padding = [0 0 0 0];
 
-            % Buat panel untuk masing-masing kolom
             [obj.PnlIn, obj.AxInput, obj.AxInputHist, obj.TxtInputFeatures] = ...
                 obj.createVisualizationPanel(' Citra Masukan Step ', colors, true);
             [obj.PnlRef, obj.AxRef, obj.AxRefHist, obj.TxtRefFeatures] = ...
@@ -265,7 +301,6 @@ classdef Layout < handle
 
         function [panel, imageAxes, histogramAxes, featureText] = ...
                 createVisualizationPanel(obj, titleText, colors, visible)
-        % CREATEVISUALIZATIONPANEL Membuat panel visualisasi
 
             visibility = 'off';
             if visible
@@ -275,13 +310,12 @@ classdef Layout < handle
             panel = uipanel(obj.GridVis, 'Title', titleText, ...
                 'FontWeight', 'bold', 'ForegroundColor', colors.text, ...
                 'BackgroundColor', colors.panel, 'Visible', visibility);
-            
-            % Bagi menjadi 3 baris untuk menampung citra, histogram, dan fitur
+
             grid = uigridlayout(panel, [3, 1]);
             grid.RowHeight = {'1x', 140, 80};
             grid.RowSpacing = 6;
             grid.Padding = [4 4 4 4];
-            
+
             imageAxes = obj.createPreviewAxes(grid, colors);
             histogramAxes = uiaxes(grid, 'BackgroundColor', colors.axis, ...
                 'XColor', colors.axisText, 'YColor', colors.axisText);
@@ -291,16 +325,11 @@ classdef Layout < handle
         end
 
         function axesHandle = createPreviewAxes(~, parent, colors)
-        % CREATEPREVIEWAXES Membuat axes untuk preview citra
             axesHandle = uiaxes(parent, 'BackgroundColor', colors.axis, ...
                 'XColor', 'none', 'YColor', 'none');
         end
 
-
-
-
         function buildStatus(obj, colors)
-        % BUILDSTATUS Membuat status bar di grid 3 (Bot) dari main grid
             panel = uipanel(obj.MainGrid, 'BackgroundColor', colors.card, 'BorderType', 'none');
             panel.Layout.Row = 3;
             obj.LblStatus = uilabel(panel, ...

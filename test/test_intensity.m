@@ -9,8 +9,8 @@ addpath(fullfile(rootFolder, 'functions', 'common'));
 addpath(fullfile(rootFolder, 'functions', 'methods'));
 
 %% 1. Baca citra input
-subfolderDataset = '2. Kasus 1';
-namaFile = 'image_01.png';
+subfolderDataset = '4. Kasus 3';
+namaFile = 'image_03.png';
 pathCitra = fullfile(rootFolder, 'dataset', subfolderDataset, namaFile);
 imgAsli = imread(pathCitra);
 

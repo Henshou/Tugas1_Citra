@@ -1,9 +1,7 @@
 function imgOut = histogramEqualization(imgIn)
 %HISTOGRAMEQUALIZATION Fungsi enhancement Histogram Equalization
 %   Fungsi ini sebagai bentuk awal pemisahan antara gambar berwarna dan
-%   tidak. Gambar berwarna akan dikonversi dulu ke color space YCbCr karena
-%   kita ingin meng-equalize channel Y-nya dan masih memerlukan Cb dan Cr
-%   untuk mengembalikan gambar kembali menjadi gambar berwarna (RGB)
+%   tidak.
     
     isColor = (ndims(imgIn) == 3);
 

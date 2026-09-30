@@ -183,13 +183,22 @@ classdef App < handle
                         obj.UI.TxtParam.Value = 'Tidak diperlukan';
                         obj.UI.TxtParam.Enable = 'off';
                     end
-                else
+                elseif methodIndex == 2
                     obj.LastConfigKey = '';
                     obj.UI.MenuType.Items = {'Standard'};
                     obj.UI.MenuType.Enable = 'off';
                     obj.UI.LblParam.Text = 'Parameter:';
                     obj.UI.TxtParam.Value = 'Tidak diperlukan';
                     obj.UI.TxtParam.Enable = 'off';
+                else
+                    obj.LastConfigKey = '';
+                    obj.UI.MenuType.Items = {'Standard'};
+                    obj.UI.MenuType.Enable = 'off';
+                    obj.UI.LblParam.Text = 'Parameter [alpha bias]:';
+                    if configChanged || isempty(obj.UI.TxtParam.Value)
+                        obj.UI.TxtParam.Value = '[1.0 0]';
+                    end
+                    obj.UI.TxtParam.Enable = 'on';
                 end
             end
         end

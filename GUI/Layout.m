@@ -111,7 +111,7 @@ classdef Layout < handle
         function showHistogram(obj, slot, img, titleText)
         % SHOWHISTOGRAM Buka/perbarui jendela histogram terpisah.
         % Citra RGB -> 3 plot (R,G,B); grayscale -> 1 plot.
-        
+
             if isempty(img), return; end
 
             if isempty(obj.HistFigs{slot}) || ~isvalid(obj.HistFigs{slot})
@@ -188,7 +188,7 @@ classdef Layout < handle
         function buildUI(obj, closeRequestCallback)
         % BUILDUI Main method untuk membangun seluruh UI
             colors = obj.createColorScheme();
-            obj.Colors = colors;   % simpan supaya bisa dipakai BuildKernelGrid nanti
+            obj.Colors = colors;
             obj.createMainWindow(closeRequestCallback, colors);
 
             % Top
@@ -275,7 +275,7 @@ classdef Layout < handle
                 'FontWeight', 'bold', 'FontColor', colors.text);
             obj.MenuMethod = uidropdown(gridControl, 'Items', ...
                 {'Intensity Transformation', 'Histogram Equalization', ...
-                'Histogram Matching', 'Image Filtering'}, ...
+                'Histogram Matching', 'Image Filtering', 'Brightening'}, ...
                 'BackgroundColor', colors.secondary, 'FontColor', 'white');
 
             % Tipe / Kernel

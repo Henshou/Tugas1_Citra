@@ -42,6 +42,12 @@ classdef Service < handle
                         kernel = obj.parseKernel(typeValue, paramStr);
                         imgOutput = convFilt(imgInput, kernel);
                     end
+                case 5
+                    parameter = str2num(paramStr);
+                    if numel(parameter) ~= 2 || any(~isfinite(parameter))
+                        error('Parameter brightening harus berupa [alpha bias].');
+                    end
+                    imgOutput = brightening(imgInput, parameter(1), parameter(2));
                 otherwise
                     error('Metode tidak dikenali.');
             end

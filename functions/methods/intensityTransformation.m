@@ -12,10 +12,9 @@ function imgOut = intensityTransformation(imgIn, transformType, parameter)
     isColor = (ndims(imgIn) == 3);
 
     if isColor
-        ycbcr = rgb2ycbcr(uint8(imgIn));
-        ycbcr(:, :, 1) = transformChannel(ycbcr(:, :, 1), ...
-            transformType, parameter);
-        imgOut = ycbcr2rgb(ycbcr);
+        for c = 1:3
+            imgOut(:, :, c) = transformChannel(imgIn(:, :, c), transformType, parameter);
+        end
     else
         imgOut = transformChannel(imgIn, transformType, parameter);
     end

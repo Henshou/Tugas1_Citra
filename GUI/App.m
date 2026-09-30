@@ -158,7 +158,7 @@ classdef App < handle
                 obj.UI.TxtParam.Visible = 'on';
 
                 if methodIndex == 1
-                    typeItems = {'Negative', 'Log', 'Gamma', 'Contrast'};
+                    typeItems = {'Negative', 'Log', 'Gamma', 'Contrast', 'Brightening'};
                     obj.UI.MenuType.Items = typeItems;
                     obj.UI.MenuType.Enable = 'on';
 
@@ -178,6 +178,12 @@ classdef App < handle
                             obj.UI.TxtParam.Value = '[0 1]';
                         end
                         obj.UI.TxtParam.Enable = 'on';
+                    elseif strcmp(obj.UI.MenuType.Value, 'Brightening')
+                        obj.UI.LblParam.Text = 'Parameter Brightening [alpha bias]:';
+                        if configChanged || isempty(obj.UI.TxtParam.Value)
+                            obj.UI.TxtParam.Value = '[1 0]';
+                        end
+                        obj.UI.TxtParam.Enable = 'on';
                     else
                         obj.UI.LblParam.Text = 'Parameter:';
                         obj.UI.TxtParam.Value = 'Tidak diperlukan';
@@ -190,15 +196,6 @@ classdef App < handle
                     obj.UI.LblParam.Text = 'Parameter:';
                     obj.UI.TxtParam.Value = 'Tidak diperlukan';
                     obj.UI.TxtParam.Enable = 'off';
-                else
-                    obj.LastConfigKey = '';
-                    obj.UI.MenuType.Items = {'Standard'};
-                    obj.UI.MenuType.Enable = 'off';
-                    obj.UI.LblParam.Text = 'Parameter [alpha bias]:';
-                    if configChanged || isempty(obj.UI.TxtParam.Value)
-                        obj.UI.TxtParam.Value = '[1.0 0]';
-                    end
-                    obj.UI.TxtParam.Enable = 'on';
                 end
             end
         end

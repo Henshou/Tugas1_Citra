@@ -26,7 +26,11 @@ classdef Service < handle
                 case 1
                     typeName = lower(typeValue);
                     param = obj.parseIntensityParameter(typeName, paramStr);
-                    imgOutput = intensityTransformation(imgInput, typeName, param);
+                    if typeName == "brightening"
+                        imgOutput = brightening(imgInput, param(1), param(2));
+                    else
+                        imgOutput = intensityTransformation(imgInput, typeName, param);
+                    end
                 case 2
                     imgOutput = histogramEqualization(imgInput);
                 case 3
@@ -42,12 +46,6 @@ classdef Service < handle
                         kernel = obj.parseKernel(typeValue, paramStr);
                         imgOutput = convFilt(imgInput, kernel);
                     end
-                case 5
-                    parameter = str2num(paramStr);
-                    if numel(parameter) ~= 2 || any(~isfinite(parameter))
-                        error('Parameter brightening harus berupa [alpha bias].');
-                    end
-                    imgOutput = brightening(imgInput, parameter(1), parameter(2));
                 otherwise
                     error('Metode tidak dikenali.');
             end
@@ -78,6 +76,11 @@ classdef Service < handle
                 parameter = str2num(paramStr);
                 if numel(parameter) ~= 2 || any(~isfinite(parameter)) || parameter(1) >= parameter(2)
                     error('Contrast harus berupa [low high], dengan low < high.');
+                end
+            elseif strcmp(typeName, 'brightening')
+                parameter = str2num(paramStr);
+                if numel(parameter) ~= 2 || any(~isfinite(parameter))
+                    error('Brightening harus berupa [alpha bias], dengan alpha dan bias valid.');
                 end
             else
                 parameter = [];

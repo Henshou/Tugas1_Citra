@@ -8,7 +8,7 @@ addpath(fullfile(rootFolder, 'functions', 'methods'));
 
 %% 1. Baca citra masukan
 subfolderDataset = '5. Kasus 4';   % ganti sesuai subfolder yang sedang dikerjakan
-namaFile         = 'image_01.png';   % ganti dengan nama file citra uji
+namaFile         = 'image_02.png';   % ganti dengan nama file citra uji
 
 pathCitra = fullfile(rootFolder, 'dataset', subfolderDataset, namaFile);
 imgAsli   = imread(pathCitra);

@@ -108,13 +108,13 @@ classdef App < handle
                 obj.UI.BtnSelectRef.Enable = 'on';
 
             elseif methodIndex == 4
-                typeItems = {'Gaussian 3x3', 'Sharpen 3x3', ...
-                             'Manual 3x3', 'Manual 5x5', 'Manual 7x7', 'Median'};
+                typeItems = {'Gaussian', 'Sharpen', ...
+                             'Manual 3x3', 'Median'};
                 currentType = obj.UI.MenuType.Value;
                 obj.UI.MenuType.Items = typeItems;
                 obj.UI.MenuType.Enable = 'on';
                 if ~any(strcmp(currentType, typeItems))
-                    obj.UI.MenuType.Value = 'Gaussian 3x3';
+                    obj.UI.MenuType.Value = 'Gaussian';
                 end
                 currentType = obj.UI.MenuType.Value;
                 configKey = sprintf('4|%s', currentType);

@@ -8,7 +8,7 @@ addpath(fullfile(rootFolder, 'functions', 'methods'));
 
 %% 1. Baca citra masukan
 
-subfolderDataset = '2. Kasus 1';   % ganti sesuai subfolder yang sedang dikerjakan
+subfolderDataset = '4. Kasus 3';   % ganti sesuai subfolder yang sedang dikerjakan
 namaFile         = 'image_01.png';   % ganti dengan nama file citra uji
 
 pathCitra = fullfile(rootFolder, 'dataset', subfolderDataset, namaFile);
@@ -40,7 +40,7 @@ analisisEq = imageAnalysis(imgEq);
 showHist(analisisEq, 'Histogram Hasil Enhancement');
 
 disp('--- Fitur Citra Setelah Enhancement ---');
-disp(featureT(analisisEq));
+disp(featureToText(analisisEq));
 
 fprintf('\n--- Perbandingan ---\n');
 fprintf('Sebelum : %s\n', featureToText(analisisAwal));

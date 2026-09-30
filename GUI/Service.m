@@ -79,9 +79,9 @@ classdef Service < handle
         end
 
         function kernel = parseKernel(~, typeName, paramStr)
-            if strcmp(typeName, 'Gaussian 3x3')
+            if strcmp(typeName, 'Gaussian')
                 kernel = [1 2 1; 2 4 2; 1 2 1] / 16;
-            elseif strcmp(typeName, 'Sharpen 3x3')
+            elseif strcmp(typeName, 'Sharpen')
                 kernel = [0 -1 0; -1 5 -1; 0 -1 0];
             else
                 kernel = str2num(paramStr);

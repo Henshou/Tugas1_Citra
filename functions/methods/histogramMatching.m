@@ -1,7 +1,7 @@
 function imgOut = histogramMatching(imgIn, referenceImg)
 %HISTOGRAMMATCHING Histogram Specification/Matching.
 %   Menyesuaikan histogram imgIn agar mengikuti histogram referenceImg.
-%   Untuk citra RGB, pencocokan dilakukan pada channel luminance Y.
+%   Untuk citra RGB, pencocokan dilakukan pada channel luminance Y (YCbCr).
 
     validateattributes(referenceImg, {'numeric', 'logical'}, ...
         {'nonempty'}, mfilename, 'referenceImg');
@@ -19,9 +19,10 @@ function imgOut = histogramMatching(imgIn, referenceImg)
 end
 
 function luminance = getLuminance(img)
-%GETLUMINANCE Mengambil channel luminance Y dari citra.
+%GETLUMINANCE Mengambil channel luminance Y dari citra secara konsisten.
     if ndims(img) == 3
-        luminance = rgb2gray(uint8(img));
+        ycbcrRef = rgb2ycbcr(uint8(img));
+        luminance = ycbcrRef(:, :, 1);
     else
         luminance = uint8(img);
     end

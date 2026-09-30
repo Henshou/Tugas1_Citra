@@ -8,17 +8,9 @@ function imgOut = histogramEqualization(imgIn)
     isColor = (ndims(imgIn) == 3);
 
     if isColor
-        ycbcr = rgb2ycbcr(imgIn);
-
-        Y = ycbcr(:, :, 1);
-        Cb = ycbcr(:, :, 2);
-        Cr = ycbcr(:, :, 3);
-
-        Y_eq = equalize(Y);
-
-        ycbcr(:, :, 1) = Y_eq;
-
-        imgOut = ycbcr2rgb(ycbcr);
+        for c = 1:3
+            imgOut(:,:,c) = equalize(imgIn(:,:,c))
+        end
     else
         imgOut = equalize(imgIn);
     end
